@@ -1,5 +1,5 @@
-#include "tone.h"
-#include "notes.h"
+#include "tone.hpp"
+#include "notes.hpp"
 
 #define VALUE_DEFAULT 0
 
@@ -7,25 +7,9 @@
 
 #define SET(x,y) (x |=(1<<y))
 
-char currentSample = VALUE_DEFAULT;
+unsigned char currentSample = VALUE_DEFAULT;
 
 Tone tones[MAX_TONES];
-
-const char temporaryWavetable0[] = {
-    15,15,0,0,15,15,0,0,0,0,15,15,15,15,0,0,15,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0
-};
-
-const char temporaryWavetable1[] = {
-    0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15
-};
-
-const char temporaryWavetable2[] = {
-    15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-};
-
-const char temporaryWavetable3[] = {
-    7,8,9,10,10,11,11,12,12,12,12,12,12,12,12,12,11,11,10,10,9,8,7,2,1,0,0,0,0,0,1,2
-};
 
 void initialize() {
     TCCR1A = 0x00;
@@ -41,35 +25,43 @@ void initialize() {
     SET(DDRB, 3);
 }
 
-
-
 void calculateSound() {
     currentSample = VALUE_DEFAULT;
 
     char i = MAX_TONES;
     while (--i >= 0){
         currentSample += tones[i].generateSample();
-        tones[i].advancePhase(1);
+        tones[i].advancePhase();
     }
 }
 
 SIGNAL(TIMER1_COMPA_vect){
-    calculateSound();
+    calculateSound(); 
     OCR2A = OCR2B = currentSample;
 }
 
 int main ()
 {
-    DDRD = DDRD | B00001000;
+    DDRD = DDRD | 0b00001000;
 
     initialize();
 
-    tones[0].setPitch(PITCH(NOTE_A4));
+    tones[0].setPitch(PITCH(NOTE_C3));
     tones[0].setVolume(15);
-    tones[0].setWavetable(temporaryWavetable2);
     tones[0].setNoise(0);
+
+    const char temporaryWavetable[] = {
+        15,15,0,0,15,15,0,0,0,0,15,15,15,15,0,0,15,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0
+    };
+
+    unsigned char i = -1;
+
+    while (++i < 16){
+
+        unsigned char samples = (temporaryWavetable[(i<<1) + 1] << 4) + temporaryWavetable[i<<1];
+        tones[0].setWavetableSamples(i, samples);
+    }
     
     while(1){
-        
     }
 }
