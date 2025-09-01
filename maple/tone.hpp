@@ -10,6 +10,7 @@ class Tone {
     unsigned int phaseTimer;
     int noiseData = 511;
     char noiseOutput = 0;
+    char index = 0;
 
     unsigned int pitch;
     unsigned char volume;
@@ -72,8 +73,14 @@ public:
         phase = index;
     }
 
-    void setPitch(unsigned int newPitch) {
-        pitch = newPitch;
+    void setPitchHigh(unsigned char newPitch) {
+        pitch &= 0b0000000011111111;
+        pitch += newPitch << 8;
+    }
+
+    void setPitchLow(unsigned char newPitch) {
+        pitch &= 0b1111111100000000;
+        pitch += newPitch;
     }
 
     void setVolume(char newVolume) {
@@ -83,13 +90,18 @@ public:
         }
     }
 
-    void setWavetableSamples(unsigned char index, unsigned char value) {
+    void setWavetableSamples(unsigned char value) {
 
-        if (index < 16){
-            wavetable[index<<1] = value & 0b00001111;
-            wavetable[(index<<1)+1] = value & 0b11110000;
-        }
-        
+        wavetable[index<<1] = value & 0b00001111;
+        wavetable[(index<<1)+1] = value & 0b11110000;
+
+        ++index;
+
+        index &= 0b00001111;
+    }
+
+    void setIndex(unsigned char value){
+        index = value & 0b00001111;
     }
 
     void setNoise(bool newNoise) {

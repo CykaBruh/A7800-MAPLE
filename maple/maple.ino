@@ -5,8 +5,6 @@
 
 #define MAX_TONES 4
 
-#define SET(x,y) (x |=(1<<y))
-
 unsigned char currentSample = VALUE_DEFAULT;
 
 Tone tones[MAX_TONES];
@@ -16,13 +14,18 @@ void initialize() {
     TCCR1B = 0x0A;
     TCCR1C = 0x00;
     OCR1A = 150;
-    SET(TIMSK1, OCIE1A);
-    sei();
+    TIMSK1 |= (1<<OCIE1A);
 
     TCCR2A = 0xB3;
     TCCR2B = 0x01;
     OCR2A = OCR2B = 0;
-    SET(DDRB, 3);
+    DDRB |= 0b00001000;
+    DDRD |= 0b10000000;
+
+    EIMSK |= 0b01000000;
+    EICRA |= 0b00000010;
+
+    sei();
 }
 
 void calculateSound() {
@@ -40,28 +43,80 @@ SIGNAL(TIMER1_COMPA_vect){
     OCR2A = OCR2B = currentSample;
 }
 
+ISR(INT0_vect){
+    unsigned char address = PINC & 0b00011111;
+    unsigned char value = PIND;
+
+    switch(address){
+        case 0:
+            tones[0].setIndex(value);
+            break;
+        case 1:
+            tones[0].setWavetableSamples(value);
+            break;
+        case 2:
+            tones[1].setIndex(value);
+            break;
+        case 3:
+            tones[1].setWavetableSamples(value);
+            break;
+        case 4:
+            tones[2].setIndex(value);
+            break;
+        case 5:
+            tones[2].setWavetableSamples(value);
+            break;
+        case 6:
+            tones[3].setIndex(value);
+            break;
+        case 7:
+            tones[3].setWavetableSamples(value);
+            break;
+        case 8:
+            tones[0].setPitchHigh(value);
+            break;
+        case 9:
+            tones[0].setPitchLow(value);
+            break;
+        case 10:
+            tones[1].setPitchHigh(value);
+            break;
+        case 11:
+            tones[1].setPitchLow(value);
+            break;
+        case 12:
+            tones[2].setPitchHigh(value);
+            break;
+        case 13:
+            tones[2].setPitchLow(value);
+            break;
+        case 14:
+            tones[3].setPitchHigh(value);
+            break;
+        case 15:
+            tones[3].setPitchLow(value);
+            break;
+        case 16:
+            tones[0].setVolume(value & 0b00001111);
+            tones[1].setVolume((value & 0b11110000) >> 4);
+            break;
+        case 17:
+            tones[2].setVolume(value & 0b00001111);
+            tones[3].setVolume((value & 0b11110000) >> 4);
+            break;
+        case 18:
+            tones[0].setNoise(value & 0b00000001);
+            tones[1].setNoise(value & 0b00000010);
+            tones[2].setNoise(value & 0b00000100);
+            tones[3].setNoise(value & 0b00001000);
+            break;
+    }
+}
+
 int main ()
 {
-    DDRD = DDRD | 0b00001000;
-
     initialize();
 
-    tones[0].setPitch(PITCH(NOTE_C3));
-    tones[0].setVolume(15);
-    tones[0].setNoise(0);
-
-    const char temporaryWavetable[] = {
-        15,15,0,0,15,15,0,0,0,0,15,15,15,15,0,0,15,15,15,15,15,15,0,0,0,0,0,0,0,0,0,0
-    };
-
-    unsigned char i = -1;
-
-    while (++i < 16){
-
-        unsigned char samples = (temporaryWavetable[(i<<1) + 1] << 4) + temporaryWavetable[i<<1];
-        tones[0].setWavetableSamples(i, samples);
-    }
-    
     while(1){
     }
 }
