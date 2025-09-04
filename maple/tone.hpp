@@ -39,11 +39,16 @@ class Tone {
 public:
 
     Tone() {
-        pitch = 0;
-        volume = 0;
+        pitch = 128;
+        volume = 15;
         noise = 0;
         for(char i = 0; i < WAVETABLE_WIDTH; i++) {
-            wavetable[i] = 0;
+            if (i%2){
+                wavetable[i] = 0;
+            }
+            else{
+                wavetable[i] = 15;
+            }
         }
         phase = 0;
         phaseTimer = 0;

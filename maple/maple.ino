@@ -19,11 +19,11 @@ void initialize() {
     TCCR2A = 0xB3;
     TCCR2B = 0x01;
     OCR2A = OCR2B = 0;
-    DDRB |= 0b00001000;
-    DDRD |= 0b10000000;
 
-    EIMSK |= 0b01000000;
-    EICRA |= 0b00000010;
+    DDRB = 0b00001000;
+    
+    PCICR = 0b00000001;
+    PCMSK0 = 0b0010000;
 
     sei();
 }
@@ -43,7 +43,10 @@ SIGNAL(TIMER1_COMPA_vect){
     OCR2A = OCR2B = currentSample;
 }
 
-ISR(INT0_vect){
+ISR(PCINT0_vect){
+
+    if (PINB & 0b00100000) return;
+
     unsigned char address = PINC & 0b00011111;
     unsigned char value = PIND;
 
@@ -71,7 +74,6 @@ ISR(INT0_vect){
             break;
         case 7:
             tones[3].setWavetableSamples(value); // set the channel 2 wavetable sample at index current index
-            break;
             break;
         case 8:
             tones[0].setPitchHigh(value); // set channel 0 pitch (high byte)
